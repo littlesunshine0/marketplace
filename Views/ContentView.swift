@@ -63,6 +63,12 @@ struct MarketplaceApp: App {
         _inventoryViewModel = StateObject(wrappedValue: InventoryViewModel(listingService: listingService, priceCheckService: priceCheck, notifications: notifications))
         _ordersViewModel = StateObject(wrappedValue: OrdersViewModel(orderService: orderService, notifications: notifications))
         _earningsViewModel = StateObject(wrappedValue: EarningsViewModel(earningsService: earningsService, notifications: notifications))
+        _listingService = StateObject(wrappedValue: listingService)
+        _orderService = StateObject(wrappedValue: orderService)
+        _earningsService = StateObject(wrappedValue: EarningsService(
+            persistenceManager: persistence,
+            orderService: orderService
+        ))
     }
 
     var body: some Scene {
@@ -176,6 +182,24 @@ struct MarketplaceApp: App {
         CommandMenu("Help") {
             Button("Open Platform Help") { destination = .help }
                 .keyboardShortcut("/", modifiers: [.command])
+        }
+    }
+            TabView {
+                InventoryView()
+                    .tabItem { Label("Inventory", systemImage: "list.bullet") }
+                    .environmentObject(listingService)
+
+                OrdersView()
+                    .tabItem { Label("Orders", systemImage: "bag") }
+                    .environmentObject(orderService)
+
+                EarningsView()
+                    .tabItem { Label("Earnings", systemImage: "chart.line.uptrend.xyaxis") }
+                    .environmentObject(earningsService)
+
+                SettingsView()
+                    .tabItem { Label("Settings", systemImage: "gear") }
+            }
         }
     }
 }
