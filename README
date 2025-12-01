@@ -5,6 +5,9 @@
 - **Plan**: [plan.md](./plan.md) – Detailed implementation scope and workstreams
 - **Milestones**: [milestones.md](./milestones.md) – Weekly milestones and deliverables
 - **Blueprint**: [marketplace-blueprint.md](./marketplace-blueprint.md) – Complete architecture and code reference
+- **Requirements**: [requirements.md](./requirements.md) – Functional and non-functional expectations
+- **Design Spec**: [design-spec.md](./design-spec.md) – Architecture, data flows, and testing strategy
+- **Implementation Checklist**: [implementation-checklist.md](./implementation-checklist.md) – Build/QA/release gates
 
 ---
 
@@ -335,6 +338,15 @@ xcodebuild -exportArchive -archivePath ... -exportOptionsPlist ...
 - [ ] Team multi-user access
 - [ ] Advanced reporting and tax summaries
 - [ ] Mobile app (iOS/iPadOS optimized)
+
+---
+
+## 📋 Operational Playbook (New)
+
+- **Platform Readiness**: OAuth sandbox credentials validated for eBay, Mercari, Facebook; redirects verified on device.
+- **Sync Reliability**: Background timer enabled; retries logged with jitter; platform health surfaced in Settings.
+- **Supportability**: Structured logs with correlation IDs; audit trail for publish attempts and order imports.
+- **Quality Gates**: Unit + UI smoke tests run per platform, accessibility check for primary flows, localization keys verified.
 
 ---
 
