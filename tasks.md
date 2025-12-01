@@ -6,8 +6,8 @@
 - [ ] Build eBay sandbox listing create/end and order fetch flows with typed responses.
 - [ ] Stand up mock adapters for Mercari and Facebook to unblock UI and sync flows.
 - [ ] Wire Inventory → Publish flow with optimistic UI state and background sync retries.
-- [ ] Add structured logging hooks around API failures, retries, and scheduler runs.
-- [ ] Create baseline unit tests for API client serialization and token refresh paths.
+- [x] Add structured logging hooks around API failures, retries, and scheduler runs.
+- [x] Create baseline unit tests for API client serialization and token refresh paths.
 
 ## Upcoming (Next Sprint Candidates)
 - [ ] Earnings calculations with per-platform breakdowns and chart-friendly aggregates.
