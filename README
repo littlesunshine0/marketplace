@@ -1,0 +1,385 @@
+# Marketplace Manager – Project Documentation
+
+## Quick Links
+- **Roadmap**: [roadmap.md](./roadmap.md) – Quarterly phases and deliverables
+- **Plan**: [plan.md](./plan.md) – Detailed implementation scope and workstreams
+- **Milestones**: [milestone.md](./milestone.md) – Weekly milestones and deliverables
+- **Blueprint**: [marketplace-blueprint.md](./marketplace-blueprint.md) – Complete architecture and code reference
+
+---
+
+## 📱 Project Overview
+
+**Marketplace Manager** is a unified Swift/SwiftUI application that enables sellers to manage product listings, orders, and earnings across multiple marketplace platforms (eBay, Mercari, Facebook Marketplace) from a single dashboard.
+
+### Core Goals
+✅ One-click multi-platform listing publishing  
+✅ Aggregated orders dashboard with real-time sync  
+✅ Earnings tracking with per-platform breakdown  
+✅ Secure OAuth2 authentication and token management  
+✅ Offline-first architecture with reliable sync  
+
+---
+
+## 🏗️ Architecture at a Glance
+
+```
+SwiftUI Views (Inventory, Orders, Earnings, Settings)
+    ↓
+Service Layer (ListingService, OrderAggregatorService, EarningsService, AuthManager)
+    ↓
+API Layer (eBayAPIClient, MercariAPIClient, FacebookAPIClient)
+    ↓
+Marketplace APIs + Local Persistence (Core Data, Keychain)
+```
+
+**Key Principles:**
+- **Service-Oriented**: Each platform isolated, testable, replaceable
+- **Reactive**: Real-time updates via Combine framework
+- **Offline-First**: Local caching with background sync every 5 minutes
+- **Secure**: Tokens stored encrypted in Keychain, OAuth2 token refresh built-in
+- **Error Resilient**: Graceful fallbacks, retry logic, user-friendly messages
+
+---
+
+## 📂 Project Structure
+
+```
+MarketplaceApp/
+├── Models/
+│   ├── Product.swift                    # Local inventory item
+│   ├── PlatformListing.swift            # Platform-specific metadata
+│   ├── Order.swift                      # Aggregated order from any platform
+│   ├── PlatformAccount.swift            # OAuth credentials
+│   └── Earnings.swift                   # Analytics and calculations
+│
+├── Services/
+│   ├── APIClient.swift                  # Base networking (token refresh, errors)
+│   ├── AuthenticationManager.swift      # OAuth2 lifecycle
+│   ├── ListingService.swift             # Product CRUD + multi-platform publish
+│   ├── OrderAggregatorService.swift     # Fetch/sync orders from all platforms
+│   ├── EarningsService.swift            # Calculate analytics
+│   ├── PersistenceManager.swift         # Core Data wrapper
+│   └── KeychainManager.swift            # Secure token storage
+│
+├── APIClients/
+│   ├── EBayAPIClient.swift              # eBay REST integration
+│   ├── MercariAPIClient.swift           # Mercari integration
+│   └── FacebookAPIClient.swift          # Facebook Graph API integration
+│
+├── Views/
+│   ├── ContentView.swift                # Tab navigation root
+│   ├── InventoryView.swift              # Browse/create/manage products
+│   ├── OrdersView.swift                 # Aggregated orders dashboard
+│   ├── OrderDetailView.swift            # Order status and tracking
+│   ├── EarningsView.swift               # Analytics and platform breakdown
+│   ├── SettingsView.swift               # Account management and OAuth flow
+│   └── Components/                      # Reusable UI components
+│
+└── Utilities/
+    ├── Constants.swift                  # API keys, endpoints, defaults
+    ├── Logging.swift                    # Telemetry and diagnostics
+    └── Extensions.swift                 # Helper methods
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Xcode 15+** with Swift 5.9+
+- **iOS 15+** / **macOS 12+** (universal app)
+- **eBay Developer Account** (sandbox access for testing)
+- **Mercari API credentials** (if using Mercari)
+- **Facebook App** with Marketplace permissions (if using Facebook)
+
+### Setup Steps
+
+1. **Clone and open project**
+   ```bash
+   git clone <repo>
+   cd MarketplaceApp
+   open MarketplaceApp.xcodeproj
+   ```
+
+2. **Configure API credentials**
+   - Add to `Constants.swift`:
+     ```swift
+     struct APIConstants {
+         static let eBayAppId = "YOUR_EBAY_APP_ID"
+         static let eBayCertId = "YOUR_EBAY_CERT_ID"
+         static let mercariApiKey = "YOUR_MERCARI_API_KEY"
+         static let facebookAppId = "YOUR_FACEBOOK_APP_ID"
+     }
+     ```
+
+3. **Set up OAuth redirect schemes**
+   - In `Info.plist`, register URL schemes for each platform:
+     ```xml
+     <key>CFBundleURLTypes</key>
+     <array>
+         <dict>
+             <key>CFBundleURLName</key>
+             <string>eBay OAuth</string>
+             <key>CFBundleURLSchemes</key>
+             <array>
+                 <string>marketplaceapp.ebay</string>
+             </array>
+         </dict>
+     </array>
+     ```
+
+4. **Build and run**
+   ```bash
+   xcode build
+   xcode run
+   ```
+
+---
+
+## 📋 Phase Breakdown
+
+### **Phase 1: Foundation (Week 1–2)**
+Models, API client infrastructure, Keychain setup, basic UI skeleton.  
+→ See [roadmap.md](./roadmap.md) for details.
+
+### **Phase 2: Auth & Persistence (Week 3–4)**
+OAuth2 flows, Core Data wiring, token management.
+
+### **Phase 3: eBay Integration (Week 5–7)**
+Full end-to-end: list item → appears on eBay → fetch orders → calculate earnings.
+
+### **Phase 4: Multi-Platform (Week 8–11)**
+Mercari, Facebook, and unified publish flow.
+
+### **Phase 5: Dashboards & Polish (Week 12–14)**
+Earnings analytics, sync reliability, error handling, logging.
+
+### **Phase 6: Beta & Feedback (Week 15–16)**
+TestFlight, uncle feedback, v2 planning.
+
+See [milestone.md](./milestone.md) for weekly breakdowns.
+
+---
+
+## 🔑 Core Workflows
+
+### 1. Create and Publish a Listing
+```
+User fills CreateListingView (title, price, images)
+    ↓
+Selects platforms (eBay, Mercari, Facebook checkboxes)
+    ↓
+ListingService.publishToAllPlatforms() kicks off concurrent tasks
+    ↓
+Each platform's APIClient (eBayAPIClient, etc.) makes API calls
+    ↓
+Platform listing IDs stored in Core Data
+    ↓
+PlatformListings appear in InventoryView with platform badges
+```
+
+### 2. Fetch Orders (Every 5 Minutes)
+```
+OrderAggregatorService starts periodic sync timer on init
+    ↓
+Timer fires → fetchOrdersFromAllPlatforms() called
+    ↓
+Concurrent calls to eBayAPIClient.fetchOrders(), etc.
+    ↓
+All orders merged, saved to Core Data
+    ↓
+Orders published via @Published var, OrdersView refreshes
+```
+
+### 3. View Earnings
+```
+User selects date range in EarningsView (This Week, This Month, etc.)
+    ↓
+EarningsService.calculateEarnings(for: period) reads Order records
+    ↓
+Groups orders by platform, calculates fees, net earnings
+    ↓
+Populates earningsSummary with platform breakdown
+    ↓
+UI displays summary cards + platform breakdown table
+```
+
+---
+
+## 🔐 Security Highlights
+
+| Layer | Strategy |
+|-------|----------|
+| **Token Storage** | Keychain (encrypted, iOS system-managed) |
+| **Token Refresh** | Automatic before expiration; 401 auto-retries |
+| **API Communication** | HTTPS + SSL certificate pinning (optional) |
+| **User Data** | Core Data only on device; no cloud sync (v1) |
+| **OAuth Flow** | ASWebAuthenticationSession for native browser flow |
+
+---
+
+## 🧪 Testing
+
+### Unit Tests
+```swift
+// Test APIClient token refresh
+// Test ListingService publish logic
+// Test EarningsService calculations
+// Test Keychain token storage/retrieval
+```
+
+### Integration Tests
+```swift
+// Test full flow: create listing → publish → fetch orders → calculate earnings
+// Test multi-platform sync concurrency
+// Test Core Data persistence layer
+```
+
+### Manual Testing Checklist
+- [ ] Create product and publish to ≥2 platforms
+- [ ] Orders sync automatically every 5 minutes
+- [ ] Earnings dashboard shows correct totals and fee breakdown
+- [ ] Token refresh works silently (no manual re-login)
+- [ ] App works offline; syncs when reconnected
+- [ ] Settings page connects/disconnects accounts cleanly
+
+---
+
+## 📊 Sync & Reliability
+
+### Sync Strategy
+- **Orders**: Background timer every 5 minutes (configurable)
+- **Listings**: On-demand when user publishes; stats sync on schedule
+- **Earnings**: Calculated on-demand when user opens tab
+
+### Error Handling
+- **Rate Limit (429)**: Exponential backoff + user toast notification
+- **401 Unauthorized**: Automatic token refresh + 1 retry
+- **Network Error**: Queue for retry; show offline badge
+- **API Timeout**: 30-second timeout; user can manually retry
+
+### Offline Support
+- Listings and orders cached locally in Core Data
+- User can view cached data without network
+- Changes queue for sync when reconnected
+
+---
+
+## 🛠️ Development Workflow
+
+### Branch Strategy
+```
+main (production releases)
+├── develop (integration branch)
+    ├── feature/ebay-integration
+    ├── feature/earnings-dashboard
+    ├── feature/offline-support
+    └── bugfix/token-refresh-edge-case
+```
+
+### Code Review Checklist
+- [ ] Follows Swift conventions and design patterns
+- [ ] No hardcoded secrets; uses Constants.swift or environment vars
+- [ ] Error handling for all API calls
+- [ ] No force unwraps without guard statements
+- [ ] Unit tests added for new services
+- [ ] Documentation updated for public APIs
+
+### Deployment to TestFlight
+```bash
+# Increment build number
+xcrun agvtool next-version -all
+
+# Archive and upload
+xcodebuild -scheme MarketplaceApp -configuration Release archive
+xcodebuild -exportArchive -archivePath ... -exportOptionsPlist ...
+
+# Distribute via App Store Connect
+```
+
+---
+
+## 📚 Key Files & Quick Reference
+
+| File | Purpose |
+|------|---------|
+| `Models/Product.swift` | Local listing data structure |
+| `Services/ListingService.swift` | CRUD + multi-platform publish |
+| `Services/OrderAggregatorService.swift` | Sync orders from all platforms |
+| `Services/EarningsService.swift` | Analytics calculations |
+| `APIClients/EBayAPIClient.swift` | eBay REST integration example |
+| `Views/InventoryView.swift` | Main inventory browsing UI |
+| `Views/OrdersView.swift` | Orders dashboard with filters |
+| `Views/EarningsView.swift` | Earnings analytics & breakdown |
+
+---
+
+## 🎯 Success Criteria
+
+**Minimum Viable Product (MVP):**
+- [ ] Create and publish listing to ≥2 platforms in one flow
+- [ ] Orders synced and displayed with correct totals
+- [ ] Earnings accurate to within 1% of platform totals
+- [ ] No manual token refresh required (auto-refresh works)
+- [ ] App gracefully handles network failures
+
+**v1.1 Enhancements:**
+- [ ] Shipping label generation integration
+- [ ] Inventory alerts (low stock, expiring listings)
+- [ ] Bulk publish/edit workflows
+- [ ] Advanced filtering and search
+
+**v2.0 Vision:**
+- [ ] Repricing rules and automation
+- [ ] Team multi-user access
+- [ ] Advanced reporting and tax summaries
+- [ ] Mobile app (iOS/iPadOS optimized)
+
+---
+
+## 🔗 External Resources
+
+- **eBay API Docs**: https://developer.ebay.com/docs
+- **Mercari API**: https://mercari.com/developers
+- **Facebook Graph API**: https://developers.facebook.com/docs/graph-api
+- **Swift Concurrency**: https://developer.apple.com/swift/concurrency/
+- **Core Data**: https://developer.apple.com/documentation/coredata
+
+---
+
+## 📝 Documentation Files
+
+- **[roadmap.md](./roadmap.md)** – Quarterly timeline, phases, owner
+- **[plan.md](./plan.md)** – Scope, deliverables, workstreams, risks
+- **[milestone.md](./milestone.md)** – Weekly milestones and acceptance criteria
+- **[marketplace-blueprint.md](./marketplace-blueprint.md)** – Full code architecture
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Open pull request with description
+
+---
+
+## 📧 Contact & Support
+
+**Project Lead**: <your-name>  
+**Email**: <your-email>  
+**Status**: 🟢 In Active Development (Phase 1–2)
+
+---
+
+## 📄 License
+
+MIT License. See LICENSE file for details.
+
+---
+
+**Last Updated**: December 1, 2025  
+**Version**: 1.0.0 (Planning Phase)
