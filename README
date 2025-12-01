@@ -3,7 +3,7 @@
 ## Quick Links
 - **Roadmap**: [roadmap.md](./roadmap.md) – Quarterly phases and deliverables
 - **Plan**: [plan.md](./plan.md) – Detailed implementation scope and workstreams
-- **Milestones**: [milestone.md](./milestone.md) – Weekly milestones and deliverables
+- **Milestones**: [milestones.md](./milestones.md) – Weekly milestones and deliverables
 - **Blueprint**: [marketplace-blueprint.md](./marketplace-blueprint.md) – Complete architecture and code reference
 
 ---
@@ -158,7 +158,7 @@ Earnings analytics, sync reliability, error handling, logging.
 ### **Phase 6: Beta & Feedback (Week 15–16)**
 TestFlight, uncle feedback, v2 planning.
 
-See [milestone.md](./milestone.md) for weekly breakdowns.
+See [milestones.md](./milestones.md) for weekly breakdowns.
 
 ---
 
@@ -352,7 +352,7 @@ xcodebuild -exportArchive -archivePath ... -exportOptionsPlist ...
 
 - **[roadmap.md](./roadmap.md)** – Quarterly timeline, phases, owner
 - **[plan.md](./plan.md)** – Scope, deliverables, workstreams, risks
-- **[milestone.md](./milestone.md)** – Weekly milestones and acceptance criteria
+- **[milestones.md](./milestones.md)** – Weekly milestones and acceptance criteria
 - **[marketplace-blueprint.md](./marketplace-blueprint.md)** – Full code architecture
 
 ---
