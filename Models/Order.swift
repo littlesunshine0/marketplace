@@ -12,6 +12,7 @@ public struct Order: Identifiable, Codable, Equatable {
     public var fees: OrderFees
     public var status: OrderStatus
     public var createdAt: Date
+    public var updatedAt: Date?
     public var estimatedDeliveryAt: Date?
     public var paidAt: Date?
     public var shippedAt: Date?
@@ -28,6 +29,7 @@ public struct Order: Identifiable, Codable, Equatable {
         fees: OrderFees,
         status: OrderStatus,
         createdAt: Date,
+        updatedAt: Date? = nil,
         estimatedDeliveryAt: Date?,
         paidAt: Date?,
         shippedAt: Date?
@@ -43,6 +45,7 @@ public struct Order: Identifiable, Codable, Equatable {
         self.fees = fees
         self.status = status
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
         self.estimatedDeliveryAt = estimatedDeliveryAt
         self.paidAt = paidAt
         self.shippedAt = shippedAt

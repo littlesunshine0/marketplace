@@ -36,13 +36,27 @@ public final class OrderAggregatorService: ObservableObject {
         async let facebookOrders = facebookClient.fetchOrders()
 
         let (ebay, mercari, facebook) = try await (ebayOrders, mercariOrders, facebookOrders)
-        let allOrders = ebay + mercari + facebook
+        let allOrders = resolveDuplicates(in: ebay + mercari + facebook)
 
         for order in allOrders {
             try persistenceManager.save(order)
         }
 
         await loadOrders()
+    }
+
+    private func resolveDuplicates(in orders: [Order]) -> [Order] {
+        var deduped: [String: Order] = [:]
+        for order in orders {
+            let key = "\(order.platform.rawValue)-\(order.platformOrderId)"
+            if let existing = deduped[key] {
+                Logger.warning(category: "orders", "Duplicate order detected; keeping newest", metadata: ["platform": order.platform.rawValue, "orderId": order.platformOrderId])
+                deduped[key] = max(existing, order) { ($0.updatedAt ?? $0.createdAt) < ($1.updatedAt ?? $1.createdAt) }
+            } else {
+                deduped[key] = order
+            }
+        }
+        return Array(deduped.values)
     }
 
     public func loadOrders() async {

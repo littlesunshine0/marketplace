@@ -5,6 +5,7 @@ import Combine
 public final class ListingService: ObservableObject {
     @Published public private(set) var products: [Product] = []
     @Published public private(set) var platformListings: [PlatformListing] = []
+    @Published public private(set) var publishJobs: [PublishJob] = []
     @Published public var isLoading = false
     @Published public var error: Error?
 
@@ -54,8 +55,25 @@ public final class ListingService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        let tasks = platforms.map { publishToSinglePlatform(product, platform: $0) }
-        try await Task.whenAllSucceed(tasks, returning: Void.self)
+        let optimisticJob = PublishJob(
+            id: UUID(),
+            productId: product.id,
+            platforms: Set(platforms),
+            status: .inFlight,
+            retryCount: 0,
+            lastError: nil
+        )
+        publishJobs.append(optimisticJob)
+
+        do {
+            let tasks = platforms.map { publishToSinglePlatform(product, platform: $0) }
+            try await Task.whenAllSucceed(tasks, returning: Void.self)
+            updateJobStatus(for: optimisticJob.id, status: .succeeded)
+        } catch {
+            updateJobStatus(for: optimisticJob.id, status: .failed(error))
+            Logger.error(category: "listing.publish", "Publish failed", metadata: ["productId": product.id.uuidString])
+            throw error
+        }
     }
 
     private func publishToSinglePlatform(_ product: Product, platform: MarketplacePlatform) async throws {
@@ -85,6 +103,7 @@ public final class ListingService: ObservableObject {
 
         try persistenceManager.save(listing)
         await loadProducts()
+        Logger.info(category: "listing.publish", "Published listing", metadata: ["platform": platform.rawValue, "productId": product.id.uuidString])
     }
 
     public func syncListingStats() async throws {
@@ -129,5 +148,28 @@ public final class ListingService: ObservableObject {
 
             try persistenceManager.delete(PlatformListing.self, id: listing.id)
         }
+    }
+
+    public func retryFailedPublishes(maxRetries: Int = 3) async {
+        for job in publishJobs where job.status.isRetryable && job.retryCount < maxRetries {
+            guard let product = products.first(where: { $0.id == job.productId }) else { continue }
+            for platform in job.platforms {
+                do {
+                    try await publishToSinglePlatform(product, platform: platform)
+                } catch {
+                    Logger.warning(category: "listing.publish", "Retry failed", metadata: ["platform": platform.rawValue, "productId": product.id.uuidString])
+                    updateJobStatus(for: job.id, status: .failed(error), incrementRetry: true)
+                    continue
+                }
+            }
+            updateJobStatus(for: job.id, status: .succeeded)
+        }
+    }
+
+    private func updateJobStatus(for jobId: UUID, status: PublishJob.Status, incrementRetry: Bool = false) {
+        guard let index = publishJobs.firstIndex(where: { $0.id == jobId }) else { return }
+        publishJobs[index].status = status
+        publishJobs[index].lastError = status.errorDescription
+        if incrementRetry { publishJobs[index].retryCount += 1 }
     }
 }
