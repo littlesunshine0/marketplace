@@ -49,6 +49,17 @@ Hybrid Approach: Inventory + Order Aggregation + Earnings Dashboard
 - Token management: Secure OAuth2 token refresh
 - Error resilience: Graceful fallbacks for API failures
 
+### Current Priorities (June 2026 refresh)
+- Ship sandbox-ready OAuth flows for eBay, Mercari, and Facebook with resilient token refresh.
+- Harden sync engine with exponential backoff, duplicate detection, and per-platform health status.
+- Deliver Inventory → Publish → Orders loop with audit logs and optimistic UI feedback.
+- Add structured telemetry (logs + counters) to support observability and support playbooks.
+
+### Specification Anchors
+- **Requirements**: See `requirements.md` for functional and non-functional expectations.
+- **Design Spec**: See `design-spec.md` for architectural decisions, data flows, and testing strategy.
+- **Implementation Checklist**: Use `implementation-checklist.md` before releases and major merges.
+
 2. DATA MODELS
 --------------
 
